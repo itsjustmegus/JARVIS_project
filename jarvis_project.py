@@ -1,7 +1,8 @@
 """
     Name:    jarvis_project.py
-    Author:  Augustus Allred
+    Author:  Gus Allred
     Created: 3/26/23
+    Revised: 3/24/24
     Purpose: JARVIS program that allows the user to use voice recognition
              make menu choices and voice commands
 """
@@ -38,6 +39,9 @@ class JARVIS:
         self.engine.setProperty("voice", voices[VOICE].id)
         # Run engine to set properties
         self.engine.runAndWait()
+        # Flag for whether command has been processed or not
+        # I got this idea from ChatGPT
+        self.command_processed = False
 
     def take_user_input(self):
         """
@@ -47,6 +51,10 @@ class JARVIS:
         # With your local microphone as the source
         with sr.Microphone() as source:
             print('Listening . . . .')
+            # Energy threshold filters background noise
+            # and requires a specific volume to recognize speech
+            # I got this idea from ChatGPT
+            self.r.energy_threshold = 4000
             self.r.pause_threshold = 1
             # Start listening for speech
             audio = self.r.listen(source)
@@ -65,7 +73,14 @@ class JARVIS:
             # Call the say method to speak the text
             self.engine.say(spoken_text)
             self.engine.runAndWait()
-            # If you say quit, the program will exit
+            # Flag for whether command has been processed or not
+            # I got this idea from ChatGPT
+            self.command_processed = True
+
+        # Timeout error
+        # I got this idea from ChatGPT
+        except sr.WaitTimeoutError:
+                print("Timeout occurred, listening again...")
 
         except sr.UnknownValueError:
             print("Google Speech Recognition could not understand audio")
@@ -73,11 +88,6 @@ class JARVIS:
         except sr.RequestError as e:
             # If there was an error communicating with Google Speech
             print(f"Google Speech did not respond: {e}")
-
-    def menu(self):
-        print("\n    - Hello Jarvis")
-        print("    - Wikipedia")
-        print("    - Quit\n")
 
     def voice_commands(self):
         if self.query == "quit":
@@ -96,11 +106,48 @@ class JARVIS:
             # Call the say method to speak the text
             self.engine.say(spoken_text)
             self.engine.runAndWait()
+        elif self.query == "write file":
+            self.write_file()
+            self.engine.runAndWait()
         elif self.query == "Wikipedia":
             self.get_wikipedia()
             self.display_wikipedia()
             self.engine.runAndWait()
 
+        # Flag for whether command has been processed or not
+        # I got this idea from ChatGPT
+        self.command_processed = False
+
+    def write_file(self):
+        """
+            Take user input to write to a file
+        """
+        # Constant for filename
+        FILE_NAME = "results.txt"
+        
+        # Catch any exceptions
+        try:
+            # Open a file for writing
+            with open(FILE_NAME, "w") as text_file:
+            
+                # Get input from the user
+                print("What do you want to write to the file?")
+                self.engine.say("What do you want to write to the file?")
+                self.engine.runAndWait()
+                jarvis.take_user_input()
+
+                # Write the numbers to the file using Fstrings
+                text_file.write(f'{self.query}\n')
+
+                # Let the user know it worked
+                print("Data was written to results.txt")
+                self.engine.say("Data was written to results.txt")
+
+
+        # Let the user know there was an exception
+        except:
+            print("There was trouble writing to the file.")
+            self.engine.say("There was trouble writing to the file.")
 
     def get_wikipedia(self):
         """
@@ -137,12 +184,21 @@ class JARVIS:
         self.engine.say("What woud you like me to do for you?")
         self.engine.runAndWait()
 
+    def menu(self):
+        """Menu for user"""
+        print("\n    - Hello Jarvis")
+        print("    - Write File")
+        # print("    - Read File")
+        print("    - Wikipedia")
+        print("    - Quit\n")
 
 
 # Create a jarvis program object
 jarvis = JARVIS()
 print(utils.title("Jarvis Personal Assistant"))
 jarvis.greet_user()
+
+# Run menu loop
 while True:
     jarvis.menu()
     jarvis.take_user_input()
